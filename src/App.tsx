@@ -8,7 +8,13 @@ function getRandomName(): string {
   return `Clock-${value}`;
 }
 
-export class App extends React.Component {
+type State = {
+  clock: string;
+  hasClock: boolean;
+  clockName: string;
+};
+
+export class App extends React.Component<{}, State> {
   state = {
     clock: new Date().toUTCString().slice(-12, -4),
     hasClock: true,
@@ -34,14 +40,19 @@ export class App extends React.Component {
   };
 
   componentDidMount(): void {
+    // Ensure the clock shows actual time immediately when it first mounts
+    const updatedTime = new Date().toUTCString().slice(-12, -4);
+
+    this.setState({ clock: updatedTime });
+
     // Update clock every second
     this.timerId = window.setInterval(() => {
       if (this.state.hasClock) {
-        const updatedTime = new Date().toUTCString().slice(-12, -4);
+        const updatedTimeNew = new Date().toUTCString().slice(-12, -4);
 
-        this.setState({ clock: updatedTime });
+        this.setState({ clock: updatedTimeNew });
         // eslint-disable-next-line no-console
-        console.log(updatedTime);
+        console.log(updatedTimeNew); // Will print updated time every second
       }
     }, 1000);
 
@@ -51,8 +62,6 @@ export class App extends React.Component {
         const newClockName = getRandomName();
 
         this.setState({ clockName: newClockName });
-        // eslint-disable-next-line no-console
-        console.warn(newClockName);
       }
     }, 3300);
 
@@ -66,6 +75,16 @@ export class App extends React.Component {
 
     document.removeEventListener('contextmenu', this.handleAddClock);
     document.removeEventListener('click', this.handleRemoveClock);
+  }
+
+  componentDidUpdate(_prevProps: {}, prevState: State) {
+    // Log if clockName has changed and if clock is visible
+    if (prevState.clockName !== this.state.clockName && this.state.hasClock) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `Renamed from ${prevState.clockName} to ${this.state.clockName}`,
+      );
+    }
   }
 
   render() {
