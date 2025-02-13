@@ -3,9 +3,7 @@ import './App.scss';
 import { Clock } from './component/Clock';
 
 function getRandomName(): string {
-  const value = Date.now().toString().slice(-4);
-
-  return `Clock-${value}`;
+  return `Clock-${Date.now().toString().slice(-4)}`;
 }
 
 type State = {
@@ -34,8 +32,21 @@ export class App extends React.Component<{}, State> {
 
   handleAddClock = (event: MouseEvent) => {
     event.preventDefault();
-    if (event.button === 0) {
-      this.setState({ hasClock: true });
+    if (event.button === 0 && !this.state.hasClock) {
+      const updatedTime = new Date().toUTCString().slice(-12, -4);
+
+      this.setState({ hasClock: true, clock: updatedTime }, () => {
+        // Перезапускаємо інтервал оновлення часу
+        this.timerId = window.setInterval(() => {
+          if (this.state.hasClock) {
+            const updatedTimeNew = new Date().toUTCString().slice(-12, -4);
+
+            this.setState({ clock: updatedTimeNew });
+            // eslint-disable-next-line no-console
+            console.log(updatedTimeNew);
+          }
+        }, 1000);
+      });
     }
   };
 
@@ -59,9 +70,13 @@ export class App extends React.Component<{}, State> {
     // Update clock name every 3.3 seconds
     this.timerIdClock = window.setInterval(() => {
       if (this.state.hasClock) {
+        const oldName = this.state.clockName;
         const newClockName = getRandomName();
 
-        this.setState({ clockName: newClockName });
+        this.setState({ clockName: newClockName }, () => {
+          // eslint-disable-next-line no-console
+          console.warn(`Renamed from ${oldName} to ${newClockName}`);
+        });
       }
     }, 3300);
 
@@ -73,18 +88,8 @@ export class App extends React.Component<{}, State> {
     window.clearInterval(this.timerId);
     window.clearInterval(this.timerIdClock);
 
-    document.removeEventListener('contextmenu', this.handleAddClock);
-    document.removeEventListener('click', this.handleRemoveClock);
-  }
-
-  componentDidUpdate(_prevProps: {}, prevState: State) {
-    // Log if clockName has changed and if clock is visible
-    if (prevState.clockName !== this.state.clockName && this.state.hasClock) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `Renamed from ${prevState.clockName} to ${this.state.clockName}`,
-      );
-    }
+    document.removeEventListener('click', this.handleAddClock);
+    document.removeEventListener('contextmenu', this.handleRemoveClock);
   }
 
   render() {
